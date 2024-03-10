@@ -1,37 +1,31 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import pickle
-import torch
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-# Load the trained model
-model_filename = 'my_dnn_model.pkl'
-with open(model_filename, 'rb') as f:
-    loaded_model = pickle.load(f)
+app = FastAPI()
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)  # Add CORS support to the app
-
-
-# Define a route for model prediction
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        # Get the JSON data from the request
-        json_data = request.get_json()
-        # Convert JSON data to numpy array
-        data = torch.tensor(json_data['data'], dtype=torch.float32)
-
-        # Make predictions using the loaded model
-        with torch.no_grad():
-            outputs = loaded_model(data)
-            _, predicted = torch.max(outputs, 1)
-            predictions = predicted.numpy().tolist()
-
-        return jsonify({'predictions': predictions}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+# Add CORS support to the app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Custom exception class
+class CustomException(Exception):
+    def __init__(self, detail: str):
+        self.detail = detail
+
+
+# Custom exception handler
+@app.exception_handler(CustomException)
+async def custom_exception_handler(request, exc):
+    return JSONResponse(status_code=400, content={"message": exc.detail})
+
+
+# Route with error handling
+@app.get("/example")
+async def example():
+    raise CustomException(detail="Custom error message")
