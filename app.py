@@ -7,8 +7,9 @@ app = FastAPI()
 # Add CORS support to the app
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "POST"],
+    allow_origins=["http://localhost:3000", "*", "https://www.e-hospital.ca",],
+    allow_methods=["POST", "*"],
+    allow_credentials=True,
     allow_headers=["*"],
 )
 
